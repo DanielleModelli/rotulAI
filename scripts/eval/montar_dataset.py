@@ -104,7 +104,7 @@ def main() -> None:
                 "gold": c["gold"],
                 "estratos": c["estratos"],
                 "distratores_presentes": c["distratores"],
-                "precisa_adjudicacao": c["adjudicar"],
+                "sem_evidencia_no_texto": c["adjudicar"],
                 "source": {"type": "open_food_facts",
                            "url": f"https://br.openfoodfacts.org/produto/{p.get('code')}",
                            "collected_at": "2026-09-22"},
@@ -117,7 +117,7 @@ def main() -> None:
         print(f"  {k:18} {usados[k]:3}")
     pos = usados["explicito"] + usados["oculto_na_base"] + usados["oculto_fora_base"]
     print(f"\n  positivos {pos} | negativos {usados['distrator'] + usados['ausente']}")
-    print(f"  rótulos com adjudicação pendente: {sum(1 for c in escolhidos if c['adjudicar'])}")
+    print(f"  rótulos sem evidência no texto (declarados assim mesmo): {sum(1 for c in escolhidos if c['adjudicar'])}")
 
 
 if __name__ == "__main__":

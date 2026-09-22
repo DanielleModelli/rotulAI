@@ -61,16 +61,26 @@ produtos que declaram "NÃO CONTÉM GLÚTEN", `gordura vegetal` e `manteiga de
 cacau` sem leite, `lecitina` sem soja. É o que separa detecção semântica de
 busca por substring.
 
-## Adjudicação pendente
+## O gabarito confia no fabricante
 
-10 rótulos têm `precisa_adjudicacao` não vazio. São casos do estrato
-`oculto_fora_base` em que **a declaração pode ser defensiva**: o fabricante
-declara o alérgeno sem que haja ingrediente correspondente na lista, por
-política de linha compartilhada.
+Regra assimétrica, deliberada:
 
-Tratar a declaração como oráculo cego contaria falso negativo onde o sistema
-está correto. Esses casos precisam de decisão humana antes da execução, com
-dupla anotação independente e registro do kappa de Cohen.
+- **Declarou "CONTÉM X" → presente.** Não cabe a nós desmentir o fabricante, que
+  conhece o processo produtivo. Mesmo quando nenhum ingrediente correspondente
+  aparece na lista (declaração por linha compartilhada), o gabarito é positivo.
+- **Não declarou e o sistema aponta → divergência conservadora.** Conta como
+  falso positivo nas métricas, mas é reportada à parte, porque é candidata a não
+  conformidade e do ponto de vista de segurança alimentar é o erro barato.
+
+A assimetria segue o risco: para quem tem alergia, falso negativo é risco à
+saúde e falso positivo é inconveniência.
+
+**Consequência a declarar.** 10 rótulos têm `sem_evidencia_no_texto` não vazio:
+o fabricante declarou, mas não há termo correspondente na lista de ingredientes.
+Nesses casos o sistema **não tem como acertar**, porque a informação não está na
+sua entrada. Isso deprime o recall do estrato `oculto_fora_base`, e é limitação
+da entrada, não da recuperação. As métricas são reportadas **com e sem** esses
+casos, para que a diferença fique visível.
 
 ## Limitações conhecidas
 
