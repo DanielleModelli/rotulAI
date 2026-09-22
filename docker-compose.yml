@@ -1,0 +1,22 @@
+services:
+  chromadb:
+    image: chromadb/chroma:latest
+    ports:
+      - "8000:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: rotulai
+      POSTGRES_PASSWORD: rotulai
+      POSTGRES_DB: rotulai
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  chroma_data:
+  postgres_data:
