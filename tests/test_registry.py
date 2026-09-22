@@ -2,8 +2,12 @@
 
 from rotulai.agents.base import SpecialistAgent
 from rotulai.agents.decisor import DecisorAgent
-from rotulai.agents.registry import register_agent
+from rotulai.agents.registry import get_registered_agents, register_agent
 from rotulai.schemas import AgentFinding, LabelInput
+
+
+def test_agents_especialistas_reais_estao_registrados():
+    assert {"chocolate", "laticinios"} <= set(get_registered_agents())
 
 
 def test_decisor_descobre_agent_recem_registrado():
