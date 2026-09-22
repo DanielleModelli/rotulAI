@@ -1,5 +1,8 @@
 from __future__ import annotations
 import json
+import time
+
+from pydantic import BaseModel
 
 from rotulai.config import settings
 from rotulai.schemas import AgentFinding, LabelInput, ReviewVerdict
@@ -56,31 +59,52 @@ class ReviewerAgent:
             f"{json.dumps([f.model_dump() for f in findings], ensure_ascii=False, indent=2)}\n\n"
             "Revise os achados acima e produza o veredito final."
         )
+        verdito, _ = self.gerar(SYSTEM_PROMPT, user_content, ReviewVerdict)
+        return verdito
+
+    def gerar(self, system_prompt: str, user_content: str, schema: type[BaseModel]):
+        """Chamada com saída estruturada, agnóstica de provedor.
+
+        Devolve (objeto do schema, metadados da chamada). Os metadados são o
+        que permite reproduzir e auditar uma rodada experimental.
+        """
+        inicio = time.perf_counter()
 
         if self.provider == "gemini":
-            return self._review_gemini(user_content)
-        return self._review_anthropic(user_content)
+            from google.genai import types
 
-    def _review_gemini(self, user_content: str) -> ReviewVerdict:
-        from google.genai import types
+            resposta = self._client.models.generate_content(
+                model=self.model,
+                contents=user_content,
+                config=types.GenerateContentConfig(
+                    system_instruction=system_prompt,
+                    response_mime_type="application/json",
+                    response_schema=schema,
+                ),
+            )
+            objeto = resposta.parsed
+            uso = getattr(resposta, "usage_metadata", None)
+            meta = {
+                "tokens_entrada": getattr(uso, "prompt_token_count", None),
+                "tokens_saida": getattr(uso, "candidates_token_count", None),
+            }
+        else:
+            resposta = self._client.messages.parse(
+                model=self.model,
+                max_tokens=4096,
+                system=system_prompt,
+                messages=[{"role": "user", "content": user_content}],
+                output_format=schema,
+            )
+            objeto = resposta.parsed_output
+            meta = {
+                "tokens_entrada": resposta.usage.input_tokens,
+                "tokens_saida": resposta.usage.output_tokens,
+            }
 
-        response = self._client.models.generate_content(
-            model=self.model,
-            contents=user_content,
-            config=types.GenerateContentConfig(
-                system_instruction=SYSTEM_PROMPT,
-                response_mime_type="application/json",
-                response_schema=ReviewVerdict,
-            ),
+        meta.update(
+            provedor=self.provider,
+            modelo=self.model,
+            latencia_s=round(time.perf_counter() - inicio, 3),
         )
-        return response.parsed
-
-    def _review_anthropic(self, user_content: str) -> ReviewVerdict:
-        response = self._client.messages.parse(
-            model=self.model,
-            max_tokens=4096,
-            system=SYSTEM_PROMPT,
-            messages=[{"role": "user", "content": user_content}],
-            output_format=ReviewVerdict,
-        )
-        return response.parsed_output
+        return objeto, meta

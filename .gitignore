@@ -16,3 +16,6 @@ venv/
 
 # macOS
 .DS_Store
+
+# Cache de execuções (derivado, reconstruível)
+results/cache/
