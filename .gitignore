@@ -19,3 +19,6 @@ venv/
 
 # Cache de execuções (derivado, reconstruível)
 results/cache/
+
+# Base vetorial do hold-out (derivada)
+.chroma_holdout/

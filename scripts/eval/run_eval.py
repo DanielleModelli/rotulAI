@@ -41,8 +41,8 @@ def git_sha() -> str:
         return "desconhecido"
 
 
-def chave_cache(product_id: str, condicao: str, modelo: str, limiar: float) -> str:
-    crua = f"{product_id}|{condicao}|{modelo}|{limiar}|{hashlib.sha1(SYSTEM_PROMPT.encode()).hexdigest()[:8]}"
+def chave_cache(product_id: str, condicao: str, modelo: str, limiar: float, tag: str = "") -> str:
+    crua = f"{product_id}|{condicao}|{modelo}|{limiar}|{tag}|{hashlib.sha1(SYSTEM_PROMPT.encode()).hexdigest()[:8]}"
     return hashlib.sha1(crua.encode()).hexdigest()
 
 
@@ -69,6 +69,7 @@ def main() -> None:
     ap.add_argument("--limite", type=int, default=0, help="0 = todos")
     ap.add_argument("--rpm", type=int, default=10, help="chamadas por minuto")
     ap.add_argument("--tentativas", type=int, default=4)
+    ap.add_argument("--tag", default="", help="rotula a execução; entra na chave de cache e no nome do arquivo")
     args = ap.parse_args()
 
     SAIDA.mkdir(parents=True, exist_ok=True)
@@ -85,13 +86,14 @@ def main() -> None:
     sha = git_sha()
 
     carimbo = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M")
-    destino = SAIDA / f"{carimbo}_{args.condicao}.jsonl"
+    nome = args.condicao + (args.tag or "")
+    destino = SAIDA / f"{carimbo}_{nome}.jsonl"
 
     ok = erros = cacheados = 0
     with destino.open("w", encoding="utf-8") as saida:
         for i, r in enumerate(rotulos, 1):
             pid = r["product_id"]
-            ck = chave_cache(pid, args.condicao, revisor.model, settings.similarity_threshold)
+            ck = chave_cache(pid, args.condicao, revisor.model, settings.similarity_threshold, args.tag)
             arquivo_cache = CACHE / f"{ck}.json"
 
             if arquivo_cache.exists():
@@ -124,7 +126,7 @@ def main() -> None:
 
                 registro = {
                     "product_id": pid,
-                    "condicao": args.condicao,
+                    "condicao": nome,
                     "predito": veredito.por_categoria(),
                     "evidencias": veredito.evidencias,
                     "justificativa": veredito.justificativa,

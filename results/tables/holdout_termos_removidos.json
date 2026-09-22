@@ -1,0 +1,47 @@
+{
+  "chocolate": {
+    "antes": 20,
+    "depois": 20,
+    "removidos": []
+  },
+  "laticinios": {
+    "antes": 48,
+    "depois": 35,
+    "removidos": [
+      "caseinato",
+      "caseinato de cálcio",
+      "caseinato de potássio",
+      "caseinato de sódio",
+      "caseína",
+      "creme de queijo",
+      "fosfocaseinato",
+      "manteiga",
+      "manteiga clarificada",
+      "mussarela",
+      "queijo",
+      "queijo processado",
+      "requeijão"
+    ]
+  },
+  "soja": {
+    "antes": 32,
+    "depois": 29,
+    "removidos": [
+      "emulsificante lecitina de soja",
+      "lecitina",
+      "lecitina de soja"
+    ]
+  },
+  "trigo": {
+    "antes": 35,
+    "depois": 29,
+    "removidos": [
+      "extrato de malte",
+      "malte",
+      "malte de cevada",
+      "sêmola",
+      "sêmola de trigo",
+      "xarope de malte"
+    ]
+  }
+}
