@@ -11,5 +11,8 @@ __pycache__/
 .venv/
 venv/
 
+# Base vetorial local (CHROMA_MODE=local)
+.chroma/
+
 # macOS
 .DS_Store

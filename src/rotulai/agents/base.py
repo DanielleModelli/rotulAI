@@ -37,7 +37,19 @@ class SemanticTermAgent(SpecialistAgent):
 
     def __init__(self, threshold: float | None = None):
         self.threshold = threshold if threshold is not None else settings.similarity_threshold
-        self.collection = get_terms_collection(self.category)
+        self._collection = None
+
+    @property
+    def collection(self):
+        """Resolve a coleção na primeira análise, não na construção.
+
+        Construir o DecisorAgent instancia todos os agents registrados; abrir
+        conexão ali obrigaria qualquer uso (inclusive testes) a ter o ChromaDB
+        de pé.
+        """
+        if self._collection is None:
+            self._collection = get_terms_collection(self.category)
+        return self._collection
 
     def analyze(self, label: LabelInput) -> AgentFinding:
         matches: list[MatchedTerm] = []
