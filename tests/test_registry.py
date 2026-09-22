@@ -7,7 +7,7 @@ from rotulai.schemas import AgentFinding, LabelInput
 
 
 def test_agents_especialistas_reais_estao_registrados():
-    assert {"chocolate", "laticinios"} <= set(get_registered_agents())
+    assert {"laticinios", "soja", "trigo", "chocolate"} <= set(get_registered_agents())
 
 
 def test_decisor_descobre_agent_recem_registrado():

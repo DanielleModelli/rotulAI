@@ -35,7 +35,7 @@ jobs:
           from rotulai.agents.registry import get_registered_agents
 
           registrados = set(get_registered_agents())
-          esperados = {"chocolate", "laticinios"}
+          esperados = {"laticinios", "soja", "trigo", "chocolate"}
           if not esperados <= registrados:
               raise SystemExit(f"registry incompleto: {sorted(registrados)}")
           print(f"registry ok: {sorted(registrados)}")
