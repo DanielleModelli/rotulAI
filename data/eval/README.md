@@ -43,13 +43,13 @@ de pesquisa.
 
 | Estrato | Significado | Decisões |
 |---|---|---:|
-| `explicito` | o nome comum aparece na lista de ingredientes | 36 |
+| `explicito` | o nome comum aparece na lista de ingredientes | 35 |
 | `oculto_na_base` | só há nome técnico, e ele **está** na base curada | 14 |
-| `oculto_fora_base` | só há nome técnico, e ele **não está** na base curada | 15 |
+| `oculto_fora_base` | só há nome técnico, e ele **não está** na base curada | 14 |
 | `distrator` | alérgeno ausente, mas há termo lexicalmente próximo | 26 |
-| `ausente` | alérgeno ausente, sem termo próximo | 29 |
+| `ausente` | alérgeno ausente, sem termo próximo | 31 |
 
-Total: 65 positivos e 55 negativos.
+Total: 63 positivos e 57 negativos.
 
 **`oculto_fora_base` é o estrato decisivo.** Ele mede quanto do desempenho vem
 da cobertura da curadoria e quanto vem de generalização semântica. Se o recall
@@ -63,7 +63,7 @@ busca por substring.
 
 ## Adjudicação pendente
 
-8 rótulos têm `precisa_adjudicacao` não vazio. São casos do estrato
+10 rótulos têm `precisa_adjudicacao` não vazio. São casos do estrato
 `oculto_fora_base` em que **a declaração pode ser defensiva**: o fabricante
 declara o alérgeno sem que haja ingrediente correspondente na lista, por
 política de linha compartilhada.

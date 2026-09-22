@@ -16,7 +16,7 @@ import re
 import unicodedata
 from pathlib import Path
 
-REPO = Path(__file__).resolve().parents[2]
+REPO = Path(__file__).resolve().parents[3]
 
 # Nomes comuns, isto é, o jeito óbvio de o alérgeno aparecer.
 NOMES_COMUNS = {

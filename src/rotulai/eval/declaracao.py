@@ -21,8 +21,14 @@ INICIO_DECL = re.compile(
     re.I,
 )
 
+VERBOS = r"n[ãa]o\s+cont[ée]m|pode\s+conter|cont[ée]m"
+
+# O alvo da cláusula vai até o próximo verbo, ponto ou ponto e vírgula. Parar
+# só no ponto estava errado: muitos rótulos separam cláusulas por vírgula
+# ("CONTÉM DERIVADOS DE SOJA E PODE CONTER TRAÇOS DE LEITE"), e o leite acabava
+# engolido pela cláusula do "contém", virando presença onde havia só traço.
 CLAUSULA = re.compile(
-    r"(n[ãa]o\s+cont[ée]m|pode\s+conter|cont[ée]m)\s*:?\s*([^.;]*)",
+    rf"({VERBOS})\s*:?\s*((?:(?!{VERBOS})[^.;])*)",
     re.I,
 )
 

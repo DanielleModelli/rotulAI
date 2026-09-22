@@ -11,7 +11,7 @@ import json
 import random
 from pathlib import Path
 
-from estratificar import carregar_base, classificar, sem_acento
+from rotulai.eval.estratos import carregar_base, classificar, sem_acento
 
 REGULADAS = ("laticinios", "soja", "trigo")
 ALVO_ROTULOS = 40
