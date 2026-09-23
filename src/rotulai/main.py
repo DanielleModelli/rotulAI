@@ -1,7 +1,7 @@
 """Exemplo de execução ponta a ponta com um rótulo fictício.
 
 Pré-requisitos: `docker compose up -d`, `python scripts/seed_chroma.py`,
-ANTHROPIC_API_KEY configurada no .env.
+OPENAI_API_KEY configurada no .env.
 """
 
 from rotulai.db.postgres_client import init_db

@@ -14,8 +14,8 @@ class Settings:
         "DATABASE_URL", "postgresql+psycopg://rotulai:rotulai@localhost:5432/rotulai"
     )
 
-    anthropic_api_key: str | None = os.getenv("ANTHROPIC_API_KEY")
-    claude_model: str = os.getenv("CLAUDE_MODEL", "claude-opus-5")
+    openai_api_key: str | None = os.getenv("OPENAI_API_KEY")
+    openai_model: str = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
     similarity_threshold: float = float(os.getenv("SIMILARITY_THRESHOLD", "0.35"))
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 import json
 
-import anthropic
+import openai
 
 from rotulai.config import settings
 from rotulai.schemas import AgentFinding, LabelInput, ReviewVerdict
@@ -18,13 +18,13 @@ fundamentado.
 
 
 class ReviewerAgent:
-    """Agent revisor: conecta com a Claude API para validar os achados dos
+    """Agent revisor: conecta com a API da OpenAI para validar os achados dos
     agents especialistas e produzir o veredito final.
     """
 
     def __init__(self, model: str | None = None):
-        self.model = model or settings.claude_model
-        self.client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
+        self.model = model or settings.openai_model
+        self.client = openai.OpenAI(api_key=settings.openai_api_key)
 
     def review(self, label: LabelInput, findings: list[AgentFinding]) -> ReviewVerdict:
         user_content = (
@@ -35,11 +35,12 @@ class ReviewerAgent:
             "Revise os achados acima e produza o veredito final."
         )
 
-        response = self.client.messages.parse(
+        response = self.client.chat.completions.parse(
             model=self.model,
-            max_tokens=4096,
-            system=SYSTEM_PROMPT,
-            messages=[{"role": "user", "content": user_content}],
-            output_format=ReviewVerdict,
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": user_content},
+            ],
+            response_format=ReviewVerdict,
         )
-        return response.parsed_output
+        return response.choices[0].message.parsed

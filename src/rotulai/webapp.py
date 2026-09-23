@@ -78,14 +78,14 @@ def analyze(label_id: str) -> dict:
 
     reviewer_result = None
     reviewer_error = None
-    if settings.anthropic_api_key:
+    if settings.openai_api_key:
         try:
             verdict = ReviewerAgent().review(label, findings)
             reviewer_result = verdict.model_dump()
         except Exception as exc:  # chave inválida, API fora do ar, etc.
             reviewer_error = str(exc)
     else:
-        reviewer_error = "ANTHROPIC_API_KEY não configurada — mostrando só os achados brutos dos especialistas."
+        reviewer_error = "OPENAI_API_KEY não configurada — mostrando só os achados brutos dos especialistas."
 
     return {
         "label": label.model_dump(),

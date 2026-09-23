@@ -14,7 +14,7 @@ flowchart LR
     subgraph Fontes["Fontes de dados externas"]
         OFF[("Open Food Facts\nrótulos reais BR")]
         Norms["Normas regulatórias\nRDC 264/2005 (vigente hoje)\nLei 15.404/2026 (a partir de mai/2027)\nRIISPOA / Decreto 9.013/2017 (laticínios)"]
-        Anthropic["Claude API\n(claude-opus-5)"]
+        OpenAI["API da OpenAI\n(gpt-4o-mini)"]
     end
 
     OFF -->|seed_labels_openfoodfacts.py\n+ enrich_cocoa_pct.py| Labels[("Postgres\nlabels")]
@@ -45,8 +45,8 @@ flowchart LR
     Choc --> Revisor
     Novo -.-> Revisor
 
-    Revisor -->|valida achados\ndescarta falso positivo| Anthropic
-    Anthropic --> Revisor
+    Revisor -->|valida achados\ndescarta falso positivo| OpenAI
+    OpenAI --> Revisor
 
     Revisor --> Web
     Decisor -.->|persist=True| Results[("Postgres\nanalysis_results")]
@@ -85,7 +85,7 @@ Sem `analyze()` próprio — toda a lógica mora em `SemanticTermAgent.analyze()
 devolve as duas no mesmo `AgentFinding`. **Não são dois agents nem duas
 chamadas de IA** — é uma classe, um método, dois algoritmos diferentes
 chamados em sequência: um busca vetorial (ChromaDB), o outro comparação
-numérica direta (Postgres). Nenhum dos dois usa a Claude API.
+numérica direta (Postgres). Nenhum dos dois usa a API da OpenAI.
 
 ### 1) Alérgeno escondido — busca por similaridade semântica
 
@@ -96,8 +96,8 @@ Não é regra fixa nem regex de sinônimo. É **busca vetorial**:
 2. Cada item é transformado em vetor por um modelo de embeddings
    (`all-MiniLM-L6-v2`, via `SentenceTransformerEmbeddingFunction`) e
    comparado, por **distância de cosseno**, contra a coleção da categoria no
-   ChromaDB (`allergen_terms_<categoria>` — hoje só as listas placeholder em
-   `data/allergen_terms/*.json`).
+   ChromaDB (`allergen_terms_<categoria>` — termos vindos das taxonomias
+   públicas da OFF, em `data/allergen_terms/*.json`).
 3. Se a similaridade do item mais próximo ≥ `SIMILARITY_THRESHOLD` (0.35 por
    padrão, `.env`), vira um `MatchedTerm` — ex.: "caseinato de sódio" bate
    com o termo conhecido "caseinato de sódio" (derivado de leite) mesmo sem
@@ -107,9 +107,9 @@ Não é regra fixa nem regex de sinônimo. É **busca vetorial**:
 Isso é **deliberadamente permissivo** — o threshold é baixo o bastante pra
 gerar falso positivo (ex.: "leite em pó" ~0.62 de similaridade com "cacau em
 pó" no teste que fizemos com o Baton). É por isso que existe a etapa 3 do
-pipeline: o `ReviewerAgent` chama a Claude API com esses achados brutos e
+pipeline: o `ReviewerAgent` chama a API da OpenAI com esses achados brutos e
 decide o que é alérgeno de verdade e o que é ruído semântico — **mas só
-quando `ANTHROPIC_API_KEY` está configurada**; sem ela (como no ambiente
+quando `OPENAI_API_KEY` está configurada**; sem ela (como no ambiente
 atual), a página mostra os achados brutos do especialista, sem esse filtro.
 
 ### 2) Regra de identidade ("é de fato chocolate?") — comparação numérica determinística
@@ -181,7 +181,7 @@ como PASSOU/FALHOU.
     `IdentityRuleChecker`, com as regras de identidade da sua categoria em
     `rules`. Rodam as duas checagens (termo escondido + regra de identidade)
     e devolvem tudo em um único `AgentFinding`.
-  - `ReviewerAgent` — chama a Claude API para validar os achados dos
+  - `ReviewerAgent` — chama a API da OpenAI para validar os achados dos
     especialistas (descartar falsos positivos, confirmar alérgenos reais) e
     produzir o veredito final.
 
@@ -189,9 +189,31 @@ como PASSOU/FALHOU.
 
 | Base | Fonte | Status | Como popular |
 |---|---|---|---|
-| `allergen_terms_*` (ChromaDB) | Curadoria manual | **Placeholder ilustrativo** — precisa de base curada (nutricionista/regulatório) | `python scripts/seed_chroma.py` |
+| `allergen_terms_laticinios` (ChromaDB) | [Taxonomia de alergênicos da OFF](https://github.com/openfoodfacts/openfoodfacts-server/blob/main/taxonomies/allergens.txt) (`pt:` da entrada "milk") | **Real**, fonte citável — 38 termos | `python scripts/seed_chroma.py` |
+| `allergen_terms_chocolate` (ChromaDB) | [Taxonomia de ingredientes da OFF](https://github.com/openfoodfacts/openfoodfacts-server/blob/main/taxonomies/food/ingredients.txt) (`pt:` das entradas de cacau) | **Real**, validada contra a fonte — 10 termos | `python scripts/seed_chroma.py` |
 | `rules` (Postgres) | Normas reais — ver detalhe abaixo | **Real**, com vigência datada por regra | `python scripts/seed_rules.py` |
 | `labels` (Postgres) | [Open Food Facts](https://world.openfoodfacts.org/data) | **Real**, cobertura parcial | `python scripts/seed_labels_openfoodfacts.py` + `enrich_cocoa_pct.py` |
+
+**De onde veio a lista de alérgenos** — inicialmente eu tinha escrito essas
+listas de cabeça, como placeholder (só pra provar que a busca semântica
+funcionava). Trocamos por uma fonte real: o próprio Open Food Facts publica
+`taxonomies/allergens.txt`, mantido pela comunidade/curadoria do projeto —
+cada alergênico oficial (os ~14 da legislação europeia, que também é a
+base da lista brasileira da RDC 727/2022) tem sinônimos em dezenas de
+idiomas, incluindo `pt:`. A entrada "milk" trouxe 27 sinônimos reais em
+português (leite, soro, lactossoro, leitelho, fermentos lácteos, nata...) —
+bem mais rico que os 14 termos técnicos que eu tinha escrito. Mesclamos os
+dois (os termos técnicos que eu já tinha + os da OFF), sem duplicar.
+
+Pra chocolate, cacau **não é um alergênico reconhecido** (nem na lista
+europeia, nem na RDC 727/2022 — confirmamos isso lá atrás) — então não
+existe uma "taxonomia de alergênico" pra ele. Em vez disso, validamos os
+termos que já tínhamos contra a taxonomia de **ingredientes** da OFF
+(`taxonomies/food/ingredients.txt`, arquivo com ~99 mil linhas — baixei e
+dei `grep` nele): as entradas de "cocoa", "cocoa butter" e "cocoa paste/
+cocoa mass" confirmaram exatamente os termos que já tínhamos ("cacau",
+"manteiga de cacau", "massa/pasta de cacau", "cacau em pó") — só faltava o
+termo-base "cacau" sozinho, que adicionamos.
 
 Não existe base pública oficial (Anvisa/MAPA) com lista de ingredientes de
 rótulo por produto de marca — a maioria dos alimentos embalados é dispensada
@@ -480,7 +502,7 @@ correspondente e rodar `python scripts/seed_rules.py`.
 `labels`, botão "Analisar", e o resultado do `DecisorAgent` pra esse rótulo
 — por categoria, mostra os termos de alérgeno encontrados e cada regra de
 identidade aplicável (com selo PASSOU/FALHOU/SEM DADO e a norma de
-referência). Se `ANTHROPIC_API_KEY` estiver configurada, mostra também o
+referência). Se `OPENAI_API_KEY` estiver configurada, mostra também o
 veredito final do `ReviewerAgent`; sem a chave, mostra só os achados brutos
 dos especialistas com um aviso.
 
@@ -493,13 +515,13 @@ o produto, faz sentido checar contra todas as categorias como rede de
 segurança (ex.: contaminação cruzada inesperada).
 
 Mesmo dentro do agent certo, o selo de alérgeno ainda distingue achado
-forte de fraco: como os termos ainda são placeholder e o threshold é
-permissivo, às vezes aparece um match de baixíssima similaridade mesmo
+forte de fraco: o threshold é permissivo de propósito, então às vezes
+aparece um match de baixíssima similaridade mesmo
 dentro da categoria certa (ex.: um termo genérico batendo fraco com um
 termo conhecido). **"ALÉRGENO ENCONTRADO"** (vermelho) só aparece se a
 melhor similaridade for ≥ 0.5; abaixo disso, aparece **"POSSÍVEL (baixa
 confiança)"** (âmbar). Isso não substitui o `ReviewerAgent` (que filtraria
-isso de verdade com a Claude API), só evita que pareça mais confiante do
+isso de verdade com a API da OpenAI), só evita que pareça mais confiante do
 que é.
 
 ```bash
@@ -521,12 +543,12 @@ scripts) e não tem autenticação/paginação/tratamento de carga.
 ## Rodando localmente
 
 ```bash
-cp .env.example .env        # preencher ANTHROPIC_API_KEY
+cp .env.example .env        # preencher OPENAI_API_KEY
 docker compose up -d        # sobe ChromaDB e Postgres
 pip install -e .
 pip install -r requirements.txt
 
-python scripts/seed_chroma.py   # popula os termos conhecidos (placeholder)
+python scripts/seed_chroma.py   # popula os termos conhecidos (taxonomias da OFF)
 python scripts/seed_rules.py    # popula as regras de identidade/composição (RDC 264/2005, Lei 15.404/2026, RIISPOA, IN 46/2007, IN 16/2005, IN 53/2018, IN 47/2018)
 python scripts/seed_labels_openfoodfacts.py  # rótulos reais (Open Food Facts) para testar os agents
 python scripts/enrich_cocoa_pct.py            # completa % de cacau que já aparece no texto de alguns rótulos
@@ -653,12 +675,34 @@ uvicorn rotulai.webapp:app --reload  # sobe a página em http://127.0.0.1:8000
     reconhecida, continua rodando todos (rede de segurança). Testado via
     API: queijo roda só `laticinios`, KitKat roda só `chocolate`, AdeS (sem
     categoria) continua rodando os dois.
+13. **Chave de LLM: só o `ReviewerAgent` precisa, e é trocável** — pergunta
+    direta se precisava de chave pra apresentar o projeto. Resposta: não,
+    as duas partes centrais (busca semântica + regra de identidade) não
+    usam LLM nenhuma. Só a etapa final opcional (filtrar falso positivo)
+    usa, e como o TCC só tinha crédito de OpenAI disponível (não
+    Anthropic), trocamos: `ReviewerAgent` agora usa `openai.OpenAI` +
+    `chat.completions.parse` (Structured Outputs) em vez de
+    `anthropic.Anthropic` + `messages.parse` — troca isolada em
+    `revisor.py`/`config.py`, sem afetar as outras duas partes.
+14. **Lista de alérgeno "escrita de cabeça" tinha alternativa real e
+    citável** — questionado se isso era um problema pro TCC e se dava pra
+    substituir por algo online. Tinha: o próprio Open Food Facts publica
+    `taxonomies/allergens.txt` (curadoria comunitária, sinônimos em
+    dezenas de idiomas incluindo `pt:`) — trocamos a lista de laticínios
+    por essa fonte (14 → 38 termos, citável). Pra chocolate, cacau não é
+    alergênico reconhecido (nem na lista europeia nem na RDC 727/2022),
+    então não existe taxonomia de alergênico equivalente — em vez disso,
+    validamos contra a taxonomia de **ingredientes** da OFF (baixamos o
+    arquivo de ~99 mil linhas e demos `grep`, WebFetch sozinho não dava
+    conta do tamanho) e confirmamos que os termos já cadastrados batiam
+    com a fonte oficial.
 
 ## Estado atual / próximos passos
 
-- As listas em `data/allergen_terms/*.json` são **placeholders ilustrativos**
-  — precisam ser substituídas por uma base curada quando os dados reais
-  chegarem.
+- As listas em `data/allergen_terms/*.json` vieram das taxonomias públicas do
+  Open Food Facts (ver "Coleta de dados"), não são mais placeholder escrito
+  de cabeça — mas ainda não passaram por revisão de um nutricionista/
+  bromatologista antes de qualquer uso além de demo/TCC.
 - A regra "OR" da categoria `achocolatado` (15% cacau OU 15% manteiga de
   cacau, Lei 15.404/2026) está modelada como duas regras independentes — o
   `IdentityRuleChecker` ainda não expressa condições alternativas/compostas.
@@ -668,10 +712,12 @@ uvicorn rotulai.webapp:app --reload  # sobe a página em http://127.0.0.1:8000
   produto (rótulo fotografado/OCR, laudo, ficha técnica do fabricante); por
   ora, só os poucos rótulos que já citam o % no próprio texto foram
   completados (`enrich_cocoa_pct.py`).
-- Este é um **protótipo de TCC**, não um produto: os termos de alérgeno são
-  placeholder (não curados), a página web não tem autenticação, e o
-  `ReviewerAgent` exige `ANTHROPIC_API_KEY` configurada pra dar o veredito
-  final (sem ela, a página mostra só os achados brutos dos especialistas).
+- Este é um **protótipo de TCC**, não um produto: os termos de alérgeno vêm
+  de taxonomia pública real (não são mais "escritos de cabeça"), mas ainda
+  não passaram por revisão de nutricionista/bromatologista; a página web
+  não tem autenticação; e o `ReviewerAgent` exige `OPENAI_API_KEY`
+  configurada pra dar o veredito final (sem ela, a página mostra só os
+  achados brutos dos especialistas).
 - `DecisorAgent.route()` já pré-filtra por `declared_category` quando ela é
   reconhecida (ver item 12 dos desafios); com mais agents plugados, o
   `get_category_for_denomination` continua funcionando sem alteração, já
