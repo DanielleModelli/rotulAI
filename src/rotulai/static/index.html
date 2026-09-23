@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8" />
+<title>rotulAI</title>
+<style>
+  :root {
+    --bg: #f7f5f2;
+    --card: #ffffff;
+    --border: #e2ddd5;
+    --text: #2a2622;
+    --muted: #756e64;
+    --pass: #2f7d4f;
+    --pass-bg: #e7f4ec;
+    --fail: #b23b3b;
+    --fail-bg: #fbeaea;
+    --unknown: #8a6d1f;
+    --unknown-bg: #faf3e0;
+    --accent: #5b4636;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+  header {
+    padding: 24px 32px 8px;
+  }
+  header h1 { margin: 0; font-size: 1.4rem; }
+  header p { margin: 4px 0 0; color: var(--muted); font-size: 0.9rem; }
+  main { max-width: 860px; margin: 0 auto; padding: 16px 32px 48px; }
+  .picker {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+  select, button {
+    font-size: 0.95rem;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text);
+  }
+  select { flex: 1; }
+  button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  button:disabled { opacity: 0.5; cursor: default; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 16px;
+  }
+  .card h2 { margin: 0 0 10px; font-size: 1.05rem; }
+  .card h3 { margin: 14px 0 6px; font-size: 0.9rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
+  .ingredients { font-size: 0.85rem; color: var(--muted); line-height: 1.5; }
+  .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+  .badge.pass { background: var(--pass-bg); color: var(--pass); }
+  .badge.fail { background: var(--fail-bg); color: var(--fail); }
+  .badge.unknown { background: var(--unknown-bg); color: var(--unknown); }
+  .rule-row, .match-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.88rem;
+  }
+  .rule-row:last-child, .match-row:last-child { border-bottom: none; }
+  .rule-meta { color: var(--muted); font-size: 0.78rem; }
+  .empty { color: var(--muted); font-size: 0.88rem; font-style: italic; }
+  .note { font-size: 0.82rem; color: var(--muted); margin-top: 10px; }
+  #placeholder { color: var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>rotulAI</h1>
+  <p>Escolha um rótulo salvo e veja se ele contém alérgeno escondido e se cumpre a regra de identidade da sua categoria.</p>
+</header>
+<main>
+  <div class="picker">
+    <select id="label-select"><option>Carregando rótulos...</option></select>
+    <button id="analyze-btn" disabled>Analisar</button>
+  </div>
+  <div id="results">
+    <p id="placeholder">Selecione um rótulo e clique em "Analisar".</p>
+  </div>
+</main>
+
+<script>
+const select = document.getElementById('label-select');
+const button = document.getElementById('analyze-btn');
+const results = document.getElementById('results');
+
+async function loadLabels() {
+  const res = await fetch('/api/labels');
+  const labels = await res.json();
+  select.innerHTML = '';
+  for (const l of labels) {
+    const opt = document.createElement('option');
+    opt.value = l.id;
+    const cat = l.declared_category || 'sem categoria declarada';
+    const brand = l.brand ? `${l.brand} — ` : '';
+    const tag = l.source === 'exemplo_demo' ? ' [exemplo ilustrativo]' : '';
+    opt.textContent = `${brand}${l.product_name} — ${cat}${tag}`;
+    select.appendChild(opt);
+  }
+  button.disabled = labels.length === 0;
+}
+
+function badge(passed) {
+  if (passed === true) return '<span class="badge pass">PASSOU</span>';
+  if (passed === false) return '<span class="badge fail">FALHOU</span>';
+  return '<span class="badge unknown">SEM DADO</span>';
+}
+
+function renderIdentity(finding) {
+  const rules = finding.identity_rule_results;
+  if (!rules.length) {
+    return '<p class="empty">Sem regra de identidade aplicável a esta categoria/denominação hoje.</p>';
+  }
+  return rules.map(r => `
+    <div class="rule-row">
+      <div>
+        <div>${r.field} ${r.operator} ${r.expected_value}${r.unit || ''}
+          — declarado: ${r.observed_value ?? '(não declarado)'}${r.unit || ''}</div>
+        <div class="rule-meta">${r.norma_referencia}${r.passed === false && r.on_fail_denomination ? ' · deveria se chamar: ' + r.on_fail_denomination : ''}</div>
+      </div>
+      ${badge(r.passed)}
+    </div>
+  `).join('');
+}
+
+function renderAllergen(finding) {
+  if (!finding.matches.length) {
+    return '<p class="empty">Nenhum termo suspeito encontrado nos ingredientes.</p>';
+  }
+  return finding.matches.map(m => `
+    <div class="match-row">
+      <div>"${m.term_found}" ~ ${m.known_hidden_name}</div>
+      <div class="rule-meta">similaridade ${m.similarity}</div>
+    </div>
+  `).join('');
+}
+
+async function analyze() {
+  const id = select.value;
+  if (!id) return;
+  button.disabled = true;
+  results.innerHTML = '<p class="empty">Analisando...</p>';
+
+  try {
+    const res = await fetch(`/api/analyze/${encodeURIComponent(id)}`);
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+
+    const brandLine = data.label.brand ? `<p class="rule-meta">Marca: ${data.label.brand}</p>` : '';
+    let html = `
+      <div class="card">
+        <h2>${data.label.product_name}</h2>
+        ${brandLine}
+        <div class="ingredients">${data.label.ingredients_text}</div>
+      </div>
+    `;
+
+    for (const f of data.findings) {
+      // O especialista roda em TODO rótulo (é o desenho multiagent — mesmo
+      // um iogurte passa pelo ChocolateAgent), então achado com similaridade
+      // baixa é esperado e não deveria parecer tão confiante quanto um
+      // achado forte. Sem o revisor LLM configurado pra filtrar isso, o
+      // selo é quem precisa comunicar essa diferença.
+      const bestSimilarity = f.matches.length ? Math.max(...f.matches.map(m => m.similarity)) : 0;
+      let allergenBadge = '<span class="badge pass">NENHUM ENCONTRADO</span>';
+      if (f.hidden_allergen_detected && bestSimilarity >= 0.5) {
+        allergenBadge = '<span class="badge fail">ALÉRGENO ENCONTRADO</span>';
+      } else if (f.hidden_allergen_detected) {
+        allergenBadge = '<span class="badge unknown">POSSÍVEL (baixa confiança)</span>';
+      }
+      // A regra de identidade só faz sentido na ficha do especialista que
+      // de fato tem regra cadastrada pra essa denominação. NÃO dá pra
+      // comparar f.category (nome do agent — sempre "laticinios" pra
+      // queijo/manteiga/iogurte/leite) com declared_category (a
+      // denominação em si, ex. "queijo") — essas strings só coincidem por
+      // acaso no caso do chocolate. O sinal correto é: esse specialist
+      // encontrou alguma regra aplicável de verdade (identity_rule_results
+      // não vazio) — só ele é quem deveria responder "é de fato X?".
+      const isIdentitySpecialist = f.identity_rule_results.length > 0;
+      const positionSection = (isIdentitySpecialist && f.ingredient_position_signal) ? `
+          <h3>Indício de posição (não é regra formal)</h3>
+          <p class="empty">${f.ingredient_position_signal.note}</p>
+      ` : '';
+      const identitySection = isIdentitySpecialist ? `
+          <h3>Regra de identidade (é de fato "${data.label.declared_category}"?)</h3>
+          ${renderIdentity(f)}
+          ${positionSection}
+      ` : '';
+      html += `
+        <div class="card">
+          <h2>${f.category} ${allergenBadge}</h2>
+          <h3>Alérgeno escondido (termos)</h3>
+          ${renderAllergen(f)}
+          ${identitySection}
+        </div>
+      `;
+    }
+
+    if (data.reviewer) {
+      html += `
+        <div class="card">
+          <h2>Veredito final (revisor LLM)</h2>
+          <p><strong>Contém alérgeno confirmado:</strong> ${data.reviewer.contains_hidden_allergen ? 'Sim' : 'Não'}</p>
+          <p><strong>Alérgenos confirmados:</strong> ${data.reviewer.allergens_confirmed.join(', ') || '—'}</p>
+          <p><strong>Confiança:</strong> ${(data.reviewer.confidence * 100).toFixed(0)}%</p>
+          <p>${data.reviewer.reasoning}</p>
+        </div>
+      `;
+    } else if (data.reviewer_error) {
+      html += `<p class="note">${data.reviewer_error}</p>`;
+    }
+
+    results.innerHTML = html;
+  } catch (err) {
+    results.innerHTML = `<p class="empty">Erro ao analisar: ${err.message}</p>`;
+  } finally {
+    button.disabled = false;
+  }
+}
+
+button.addEventListener('click', analyze);
+loadLabels();
+</script>
+</body>
+</html>

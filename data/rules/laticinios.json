@@ -1,0 +1,197 @@
+[
+  {
+    "id": "queijo-sem-gordura-nao-lactea",
+    "category": "laticinios",
+    "applies_to": "queijo",
+    "field": "gordura_nao_lactea_pct",
+    "operator": "<=",
+    "value": 0,
+    "unit": "%",
+    "on_fail_denomination": "mistura de queijo e gordura vegetal",
+    "norma_referencia": "Decreto 9.013/2017 (RIISPOA), Art. 373, §4º"
+  },
+  {
+    "id": "queijo-sem-proteina-nao-lactea",
+    "category": "laticinios",
+    "applies_to": "queijo",
+    "field": "proteina_nao_lactea_pct",
+    "operator": "<=",
+    "value": 0,
+    "unit": "%",
+    "on_fail_denomination": "mistura de queijo e proteína não láctea",
+    "norma_referencia": "Decreto 9.013/2017 (RIISPOA), Art. 373, §4º"
+  },
+  {
+    "id": "requeijao-sem-gordura-nao-lactea",
+    "category": "laticinios",
+    "applies_to": "requeijao",
+    "field": "gordura_nao_lactea_pct",
+    "operator": "<=",
+    "value": 0,
+    "unit": "%",
+    "on_fail_denomination": "mistura de requeijão e gordura vegetal",
+    "norma_referencia": "Decreto 9.013/2017 (RIISPOA), Art. 394, parágrafo único; Portaria MA 359/1997"
+  },
+  {
+    "id": "manteiga-sem-gordura-nao-lactea",
+    "category": "laticinios",
+    "applies_to": "manteiga",
+    "field": "gordura_nao_lactea_pct",
+    "operator": "<=",
+    "value": 0,
+    "unit": "%",
+    "on_fail_denomination": "creme vegetal / mistura (não pode ser rotulado como manteiga)",
+    "norma_referencia": "Decreto 9.013/2017 (RIISPOA), Art. 371"
+  },
+  {
+    "id": "composto-lacteo-sem-substituicao-gordura",
+    "category": "laticinios",
+    "applies_to": "composto_lacteo",
+    "field": "gordura_nao_lactea_pct",
+    "operator": "<=",
+    "value": 0,
+    "unit": "%",
+    "on_fail_denomination": "produto não pode ser rotulado como composto lácteo",
+    "norma_referencia": "Portaria SDA/MAPA 1170/2024",
+    "notes": "Óleo vegetal só é permitido para enriquecimento nutricional, com declaração obrigatória 'CONTÉM ÓLEO VEGETAL' e 'Composto Lácteo não é leite em pó' — não como substituição de gordura láctea. Regra aqui simplificada para o caso de substituição."
+  },
+  {
+    "id": "iogurte-base-lactea-minima",
+    "category": "laticinios",
+    "applies_to": "iogurte",
+    "field": "base_lactea_pct",
+    "operator": ">=",
+    "value": 51,
+    "unit": "%",
+    "on_fail_denomination": "bebida láctea (ou outra denominação, conforme composição)",
+    "norma_referencia": "Instrução Normativa MAPA nº 46/2007 (RTIQ de Leites Fermentados)",
+    "notes": "IN 46/2007 também exige fermentação com cultura protosimbiótica de Streptococcus salivarius subsp. thermophilus + Lactobacillus delbrueckii subsp. bulgaricus, viáveis e ativos até o fim da validade — isso não é numérico, então não está modelado aqui como regra de threshold (ver campo 'fermento_especifico_presente', modelado como 1/0 abaixo)."
+  },
+  {
+    "id": "iogurte-fermento-especifico",
+    "category": "laticinios",
+    "applies_to": "iogurte",
+    "field": "fermento_especifico_presente",
+    "operator": ">=",
+    "value": 1,
+    "unit": null,
+    "on_fail_denomination": "leite fermentado (sem ser 'iogurte')",
+    "norma_referencia": "Instrução Normativa MAPA nº 46/2007 (RTIQ de Leites Fermentados)",
+    "notes": "Campo booleano codificado como 1 (presente) / 0 (ausente): indica se a fermentação usou a cultura protosimbiótica exigida (S. thermophilus + L. bulgaricus). Sem essa cultura específica, o produto pode ainda ser um 'leite fermentado' legítimo, só não pode se chamar 'iogurte'."
+  },
+  {
+    "id": "bebida-lactea-base-lactea-minima",
+    "category": "laticinios",
+    "applies_to": "bebida_lactea",
+    "field": "base_lactea_pct",
+    "operator": ">=",
+    "value": 51,
+    "unit": "%",
+    "norma_referencia": "Instrução Normativa MAPA nº 16/2005 (RTIQ de Bebida Láctea)",
+    "notes": "Mesmo piso de 51% que o iogurte (IN 46/2007) — a diferença entre as duas denominações não é o percentual, é a composição (bebida láctea é definida pela mistura de leite + soro de leite) e o tipo de fermento."
+  },
+  {
+    "id": "leite-em-po-integral-gordura-min",
+    "category": "laticinios",
+    "applies_to": "leite_em_po_integral",
+    "field": "gordura_pct",
+    "operator": ">=",
+    "value": 26.0,
+    "unit": "%",
+    "on_fail_denomination": "leite em pó parcialmente desnatado (ou desnatado, conforme o teor real)",
+    "norma_referencia": "Instrução Normativa MAPA nº 53/2018 (RT Mercosul de Identidade e Qualidade de Leite em Pó)"
+  },
+  {
+    "id": "leite-em-po-parcialmente-desnatado-gordura-min",
+    "category": "laticinios",
+    "applies_to": "leite_em_po_parcialmente_desnatado",
+    "field": "gordura_pct",
+    "operator": ">",
+    "value": 1.5,
+    "unit": "%",
+    "norma_referencia": "Instrução Normativa MAPA nº 53/2018",
+    "notes": "Faixa de 'parcialmente desnatado' é > 1,5% e < 26,0% — as duas regras juntas (min e max) formam a faixa; ver a regra 'leite-em-po-parcialmente-desnatado-gordura-max'. Existe também uma denominação opcional 'semidesnatado', com faixa própria mais estreita dentro desse intervalo — fontes consultadas divergem no valor exato (12–14% vs. 14–16%), então não modelei essa subfaixa até confirmar em fonte primária."
+  },
+  {
+    "id": "leite-em-po-parcialmente-desnatado-gordura-max",
+    "category": "laticinios",
+    "applies_to": "leite_em_po_parcialmente_desnatado",
+    "field": "gordura_pct",
+    "operator": "<",
+    "value": 26.0,
+    "unit": "%",
+    "norma_referencia": "Instrução Normativa MAPA nº 53/2018"
+  },
+  {
+    "id": "leite-em-po-desnatado-gordura-max",
+    "category": "laticinios",
+    "applies_to": "leite_em_po_desnatado",
+    "field": "gordura_pct",
+    "operator": "<",
+    "value": 1.5,
+    "unit": "%",
+    "on_fail_denomination": "leite em pó parcialmente desnatado (ou integral, conforme o teor real)",
+    "norma_referencia": "Instrução Normativa MAPA nº 53/2018"
+  },
+  {
+    "id": "leite-condensado-alto-teor-gordura-min",
+    "category": "laticinios",
+    "applies_to": "leite_condensado_alto_teor_gordura",
+    "field": "gordura_pct",
+    "operator": ">=",
+    "value": 16.0,
+    "unit": "%",
+    "norma_referencia": "Instrução Normativa MAPA nº 47/2018 (RTIQ de Leite Condensado)"
+  },
+  {
+    "id": "leite-condensado-integral-gordura-min",
+    "category": "laticinios",
+    "applies_to": "leite_condensado_integral",
+    "field": "gordura_pct",
+    "operator": ">=",
+    "value": 8.0,
+    "unit": "%",
+    "norma_referencia": "Instrução Normativa MAPA nº 47/2018"
+  },
+  {
+    "id": "leite-condensado-integral-gordura-max",
+    "category": "laticinios",
+    "applies_to": "leite_condensado_integral",
+    "field": "gordura_pct",
+    "operator": "<",
+    "value": 16.0,
+    "unit": "%",
+    "norma_referencia": "Instrução Normativa MAPA nº 47/2018"
+  },
+  {
+    "id": "leite-condensado-parcialmente-desnatado-gordura-min",
+    "category": "laticinios",
+    "applies_to": "leite_condensado_parcialmente_desnatado",
+    "field": "gordura_pct",
+    "operator": ">",
+    "value": 1.0,
+    "unit": "%",
+    "norma_referencia": "Instrução Normativa MAPA nº 47/2018",
+    "notes": "Mapeei o rótulo real 'Leite Condensado Semidesnatado' pra esta denominação assumindo 'semidesnatado' como sinônimo comercial de 'parcialmente desnatado' — a IN 47/2018 não lista 'semidesnatado' como uma das 4 denominações oficiais (alto teor de gordura, integral, parcialmente desnatado, desnatado), então essa equivalência não está 100% confirmada em fonte primária."
+  },
+  {
+    "id": "leite-condensado-parcialmente-desnatado-gordura-max",
+    "category": "laticinios",
+    "applies_to": "leite_condensado_parcialmente_desnatado",
+    "field": "gordura_pct",
+    "operator": "<",
+    "value": 8.0,
+    "unit": "%",
+    "norma_referencia": "Instrução Normativa MAPA nº 47/2018"
+  },
+  {
+    "id": "leite-condensado-desnatado-gordura-max",
+    "category": "laticinios",
+    "applies_to": "leite_condensado_desnatado",
+    "field": "gordura_pct",
+    "operator": "<=",
+    "value": 1.0,
+    "unit": "%",
+    "norma_referencia": "Instrução Normativa MAPA nº 47/2018"
+  }
+]
