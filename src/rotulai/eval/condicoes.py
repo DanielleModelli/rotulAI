@@ -17,7 +17,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from rotulai.agents.decisor import DecisorAgent
 from rotulai.eval.esquema import CATEGORIAS, VereditoAvaliacao
 from rotulai.schemas import LabelInput
 
@@ -111,6 +110,11 @@ class Condicoes:
             # Limiar zero na recuperação para GRAVAR todas as similaridades: é
             # o que permite varrer limiares depois sem gastar uma única chamada
             # nova de API. O prompt recebe apenas o que passa do limiar real.
+            #
+            # Os imports ficam aqui, e não no topo, para que a construção dos
+            # prompts seja importável sem ChromaDB. É o que permite ao teste de
+            # regressão reconstruir os prompts publicados sem subir infra.
+            from rotulai.agents.decisor import DecisorAgent
             from rotulai.agents.registry import get_registered_agents
 
             self._decisor = DecisorAgent(
