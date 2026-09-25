@@ -131,8 +131,8 @@ function badge(passed) {
   return '<span class="badge unknown">SEM DADO</span>';
 }
 
-function renderIdentity(finding) {
-  const rules = finding.identity_rule_results;
+function renderIdentity(identity) {
+  const rules = identity.rule_results;
   if (!rules.length) {
     return '<p class="empty">Sem regra de identidade aplicável a esta categoria/denominação hoje.</p>';
   }
@@ -193,30 +193,38 @@ async function analyze() {
       } else if (f.hidden_allergen_detected) {
         allergenBadge = '<span class="badge unknown">POSSÍVEL (baixa confiança)</span>';
       }
-      // A regra de identidade só faz sentido na ficha do especialista que
-      // de fato tem regra cadastrada pra essa denominação. NÃO dá pra
-      // comparar f.category (nome do agent — sempre "laticinios" pra
-      // queijo/manteiga/iogurte/leite) com declared_category (a
-      // denominação em si, ex. "queijo") — essas strings só coincidem por
-      // acaso no caso do chocolate. O sinal correto é: esse specialist
-      // encontrou alguma regra aplicável de verdade (identity_rule_results
-      // não vazio) — só ele é quem deveria responder "é de fato X?".
-      const isIdentitySpecialist = f.identity_rule_results.length > 0;
-      const positionSection = (isIdentitySpecialist && f.ingredient_position_signal) ? `
-          <h3>Indício de posição (não é regra formal)</h3>
-          <p class="empty">${f.ingredient_position_signal.note}</p>
-      ` : '';
-      const identitySection = isIdentitySpecialist ? `
-          <h3>Regra de identidade (é de fato "${data.label.declared_category}"?)</h3>
-          ${renderIdentity(f)}
-          ${positionSection}
-      ` : '';
       html += `
         <div class="card">
           <h2>${f.category} ${allergenBadge}</h2>
           <h3>Alérgeno escondido (termos)</h3>
           ${renderAllergen(f)}
-          ${identitySection}
+        </div>
+      `;
+    }
+
+    // Identidade é uma frente própria, sobre o rótulo inteiro, e não achado de
+    // um especialista de alérgeno. Antes era preciso adivinhar a qual ficha ela
+    // pertencia comparando strings que só coincidiam por acaso no chocolate.
+    if (data.identity) {
+      const id = data.identity;
+      const risco = id.denomination_at_risk
+        ? `<span class="badge fail">DENOMINAÇÃO EM RISCO</span>`
+        : `<span class="badge pass">SEM VIOLAÇÃO</span>`;
+      const sugestao = id.suggested_denomination
+        ? `<p class="note">Pelo critério, deveria se chamar: <b>${id.suggested_denomination}</b>.</p>`
+        : '';
+      const posicao = id.ingredient_position_signal ? `
+          <h3>Indício de posição (não é regra formal)</h3>
+          <p class="empty">${id.ingredient_position_signal.note}</p>
+      ` : '';
+      html += `
+        <div class="card">
+          <h2>Identidade do produto ${risco}</h2>
+          <h3>É de fato "${id.declared_category}"?</h3>
+          ${renderIdentity(id)}
+          ${sugestao}
+          <p class="rule-meta">${id.rules_evaluated} regra(s) avaliada(s), ${id.rules_violated} violada(s).</p>
+          ${posicao}
         </div>
       `;
     }

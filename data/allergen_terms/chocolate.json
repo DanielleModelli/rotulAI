@@ -1,12 +1,31 @@
-[
-  "cacau",
-  "manteiga de cacau",
-  "licor de cacau",
-  "massa de cacau",
-  "pasta de cacau",
-  "cacau em pó",
-  "nibs de cacau",
-  "extrato de cacau",
-  "gordura de cacau",
-  "chocolate em pó"
-]
+{
+  "categoria": "chocolate",
+  "regulado": false,
+  "alergeno_rdc26": null,
+  "observacao": "Cacau e seus derivados NÃO constam do Anexo da RDC 26/2015 e, portanto, não são alimentos de declaração obrigatória no Brasil. Esta categoria é mantida como restrição alimentar não regulada, e serve de controle de especificidade e de demonstração de extensibilidade. Ela é reportada em análise secundária, fora da tabela principal de métricas, porque seu gabarito não pode ser ancorado na declaração obrigatória do fabricante.",
+  "fontes": {
+    "dominio": "Conhecimento de domínio dos autores, declarado como tal no relatório."
+  },
+  "termos": [
+    { "termo": "cacau", "fonte": "dominio" },
+    { "termo": "massa de cacau", "fonte": "dominio" },
+    { "termo": "licor de cacau", "fonte": "dominio" },
+    { "termo": "pasta de cacau", "fonte": "dominio" },
+    { "termo": "manteiga de cacau", "fonte": "dominio" },
+    { "termo": "cacau em pó", "fonte": "dominio" },
+    { "termo": "nibs de cacau", "fonte": "dominio" },
+    { "termo": "extrato de cacau", "fonte": "dominio" },
+    { "termo": "gordura de cacau", "fonte": "dominio" },
+    { "termo": "sólidos de cacau", "fonte": "dominio" },
+    { "termo": "cacau alcalinizado", "fonte": "dominio" },
+    { "termo": "cacau torrado", "fonte": "dominio" },
+    { "termo": "amêndoas de cacau", "fonte": "dominio" },
+    { "termo": "chocolate", "fonte": "dominio" },
+    { "termo": "chocolate em pó", "fonte": "dominio" },
+    { "termo": "chocolate ao leite", "fonte": "dominio" },
+    { "termo": "chocolate amargo", "fonte": "dominio" },
+    { "termo": "chocolate meio amargo", "fonte": "dominio" },
+    { "termo": "cobertura de chocolate", "fonte": "dominio" },
+    { "termo": "achocolatado", "fonte": "dominio" }
+  ]
+}

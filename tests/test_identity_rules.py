@@ -1,6 +1,6 @@
 """Regras de identidade/composição (PIQ) — ex.: Lei do Chocolate, RIISPOA."""
 
-from rotulai.agents.base import IdentityRuleChecker, IngredientPositionChecker
+from rotulai.identity import IdentityRuleChecker, IngredientPositionChecker
 from rotulai.schemas import LabelInput, Rule
 
 CHOCOLATE_35 = Rule(

@@ -4,15 +4,32 @@ from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunct
 
 from rotulai.config import settings
 
-_embedding_function = SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
+_embedding_function: SentenceTransformerEmbeddingFunction | None = None
 
 _client: chromadb.ClientAPI | None = None
+
+
+def get_embedding_function() -> SentenceTransformerEmbeddingFunction:
+    """Carrega o modelo de embedding na primeira chamada, não no import.
+
+    Instanciar no import fazia qualquer `import rotulai.agents` baixar e
+    carregar o modelo, o que torna testes lentos e quebra sem rede.
+    """
+    global _embedding_function
+    if _embedding_function is None:
+        _embedding_function = SentenceTransformerEmbeddingFunction(
+            model_name=settings.embedding_model
+        )
+    return _embedding_function
 
 
 def get_chroma_client() -> chromadb.ClientAPI:
     global _client
     if _client is None:
-        _client = chromadb.HttpClient(host=settings.chroma_host, port=settings.chroma_port)
+        if settings.chroma_mode == "local":
+            _client = chromadb.PersistentClient(path=settings.chroma_path)
+        else:
+            _client = chromadb.HttpClient(host=settings.chroma_host, port=settings.chroma_port)
     return _client
 
 
@@ -24,7 +41,7 @@ def get_terms_collection(category: str):
     client = get_chroma_client()
     return client.get_or_create_collection(
         name=f"allergen_terms_{category}",
-        embedding_function=_embedding_function,
+        embedding_function=get_embedding_function(),
         metadata={"hnsw:space": "cosine"},
     )
 

@@ -95,9 +95,29 @@ class AgentFinding(BaseModel):
     category: str
     hidden_allergen_detected: bool
     matches: List[MatchedTerm] = Field(default_factory=list)
-    identity_rule_results: List[IdentityRuleResult] = Field(default_factory=list)
-    ingredient_position_signal: Optional[IngredientPositionSignal] = None
     notes: Optional[str] = None
+
+    # Atenção: este schema é serializado LITERALMENTE dentro do prompt da
+    # condição C3 (ver rotulai/eval/condicoes.py::prompt_c3). Acrescentar campo
+    # aqui altera o texto enviado ao modelo e invalida os resultados publicados.
+    # Saídas da frente de identidade vivem em IdentityReport, não aqui.
+    # Protegido por tests/test_prompt_congelado.py.
+
+
+class IdentityReport(BaseModel):
+    """Resultado da frente de conformidade de identidade do produto.
+
+    Separado do AgentFinding de propósito: aquele alimenta o prompt do revisor
+    de alérgeno, este não. Ver rotulai/identity.py.
+    """
+
+    declared_category: str
+    rule_results: List[IdentityRuleResult] = Field(default_factory=list)
+    ingredient_position_signal: Optional[IngredientPositionSignal] = None
+    rules_evaluated: int = 0
+    rules_violated: int = 0
+    denomination_at_risk: bool = False
+    suggested_denomination: Optional[str] = None
 
 
 class ReviewVerdict(BaseModel):
